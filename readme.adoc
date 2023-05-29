@@ -44,7 +44,9 @@ CAUTION: Auch hier muss man aufpassen. Das Problem ist die GitOps-Instanz für d
 Dieses Problem hat man auch im ArgoCD Projekt erkannt (vor ca. einem Jahr war das noch ein größeres Problem) und dafür eine Option erschaffen. Es gibt Umgebungsvariablen, welche auf die Rolle verweisen, welche GitOps für den Application-Controller verwendet. Diese kann in der Subscription gesetzt werden. Siehe dazu auch:
 
 https://argocd-operator.readthedocs.io/en/latest/usage/custom_roles/
+
 https://docs.openshift.com/container-platform/4.10/cicd/gitops/gitops-release-notes.html#new-features-1-4-0_gitops-release-notes
+
 https://issues.redhat.com/browse/GITOPS-1290
 
 IMPORTANT: Ich habe noch nicht getestet, ob es eine einfach Option gibt, dieses Verhalten je nach Instanz zu steuern. Das Setting bezieht sich auf die Subscription, also den Operator und die Instanzen erben dies vom Operator. Red Hat schreibt zwar (siehe Issue Link) "Cluster admin can choose to maintain the existing behaviour and request Argo CD to be namespace-admin", bisher ist mir aber noch nicht klar, wie dies einfach gesetzt werden kann.
