@@ -11,13 +11,15 @@ In der Regel haben wir aber getrennte Gruppen, welche auf einem OpenShift Server
 
 Problematisch kann es nun werden, wenn sowohl die Clusteradministratoren als auch die Developerteams Red Hat GitOps verwenden möchten. Denn auf einmal möchten zwei verschiedene Gruppen auf die gleichen Namespaces zugreifen, um dort jeweils ihre Konfigurationen zu hinterlegen. Die Clusteradmins möchten beispielsweise Ressourcequotas, Limitranges oder Networkpolicies im Namespace konfigurieren und die Developer möchten ihrerseits natürlich Deployments, Configmaps, Routen und mehr konfigurieren.
 
-== Keine Option: Nur eine Red hat GitOps Instanz
+== Option 1: Nur eine Red hat GitOps Instanz
 
-Diese Option ist eigentlich keine. Natürlich kann man nur eine Instanz von Red Hat GitOps installieren und dort über RBAC die Berechtigungen trennen, so dass Developerteams zur Zugriff auf ihre jeweiligen Argo-Applikationsprojekte haben.
+Diese Option klingt zunächst leicht, ist sie aber nicht, da sie schwierig zu konfigurieren ist. Natürlich kann man nur eine Instanz von Red Hat GitOps installieren und dort über RBAC die Berechtigungen trennen, so dass Developerteams nur Zugriff auf ihre jeweiligen Argo-Applikationsprojekte haben.
 
-Das Problem lauert aber an einer anderen Stelle. Wenn wir nur eine GitOps-Instanz haben, dann haben wir auch nur einen dahinterliegenden Serviceaccount mit den entsprechenden Berechtigungen in dem Namespace. Und wenn ein Developerteam GitOps verwendet, dann werden die Ressourcen nicht mit den Berechtigungen des Developers, sondern mit den Berechtigungen des GitOps-Serviceaccounts erstellt. Hat also der Clusteradmin die Möglichkeit, über GitOps eine Networkpolicy auszurollen, dann hat der Developer das in seinem Namespace ebenso.
+image:pictures/oneargo.png["Nur eine Instanz"]
 
-image:pictures/oneargo2.png["Nur eine Instanz"]
+Das Problem lauert aber an einer anderen Stelle. Wenn wir nur eine GitOps-Instanz haben, dann haben wir auch nur einen dahinterliegenden GitOps-Serviceaccount mit den entsprechenden Berechtigungen in dem Namespace. Und wenn ein Developerteam GitOps verwendet, dann werden die Ressourcen nicht mit den Berechtigungen des Developers, sondern mit den Berechtigungen des GitOps-Serviceaccounts erstellt. Hat also der Clusteradmin die Möglichkeit, über GitOps eine Networkpolicy auszurollen, dann hat der Developer das in seinem Namespace ebenso.
+
+Nun kann man dies noch über die Argo-Applikationsprojekte lösen, denn dort lässt sich konfigurieren, welche Art von Kubernetesonjekten wie z.B. "NetworkPolicy" erstellt werden dürfen und welche nicht. Diese Konfiguration muss aber sehr bedacht vorgenommen werden, damit am Ende die Berechtigungen korrekt sind.
 
 Wenn man jedoch unterschiedliche Instanzen von Red Hat GitOps einsetzen möchte oder dies gar eine Compliance- oder Securityanforderung ist, muss man anders vorgehen. Hierfür sind die beiden folgenden Optionen gedacht.
 
@@ -28,6 +30,8 @@ Wenn man getrennte Instanzen von Red Hat GitOps einsetzt, stösst man auf ein Pr
 Hinweis: Diese Option habe ich bisher nicht getestet, es dürfte aber keine technischen Probleme geben.
 
 Wenn man nun beide Instanzen berechtigen möchte, auf einen Namespace zuzugreifen, muss man wissen, was hinter den Kulissen passiert, wenn ein Namespace ein entsprechendes Label erhält.
+
+image:pictures/berechtigungsprozess.png["Berechtigungsprozess"]
 
 
 
