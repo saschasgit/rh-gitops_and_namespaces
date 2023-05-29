@@ -1,0 +1,39 @@
+kind: GroupConfig
+apiVersion: redhatcop.redhat.io/v1alpha1
+metadata:
+  name: test-groupconfig
+spec:
+  labelSelector:
+    matchLabels:
+      team: important-project
+  templates:
+    - objectTemplate: |
+        apiVersion: v1
+        kind: Namespace
+        metadata:
+          name: important-project-dev
+          labels:
+            group: {{ .Name }}
+            namespace: important-project-dev
+          annotations:
+            my-annotation: justtext-dev
+    - objectTemplate: |
+        apiVersion: v1
+        kind: Namespace
+        metadata:
+          name: important-project-staging
+          labels:
+            group: {{ .Name }}
+            namespace: important-project-staging
+          annotations:
+            my-annotation: justtext-staging
+    - objectTemplate: |
+        apiVersion: v1
+        kind: Namespace
+        metadata:
+          name: important-project-prod
+          labels:
+            group: {{ .Name }}
+            namespace: important-project-prod
+          annotations:
+            my-annotation: justtext-prod

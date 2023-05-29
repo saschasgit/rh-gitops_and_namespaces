@@ -1,0 +1,17 @@
+kind: Group
+apiVersion: user.openshift.io/v1
+metadata:
+  name: namespace-test-group
+  labels:
+    team: important-project
+users:
+  - namespace-testuser1
+  - namespace-testuser2
+---
+kind: Group
+apiVersion: user.openshift.io/v1
+metadata:
+  name: namespace-test-group2
+users:
+  - namespace-testuser3
+  - namespace-testuser4 
