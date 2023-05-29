@@ -31,13 +31,13 @@ Hinweis: Diese Option habe ich bisher nicht getestet, es dürfte aber keine tech
 
 Wenn man nun beide Instanzen berechtigen möchte, auf einen Namespace zuzugreifen, muss man wissen, was hinter den Kulissen passiert, wenn ein Namespace ein entsprechendes Label erhält.
 
-image:pictures/berechtigungsprozess2.png["Berechtigungsprozess"]
+image:pictures/berechtigungsprozess3.png["Berechtigungsprozess"]
 
 Wenn ein Namespace mit dem entsprechenden Label erstellt wird, bermerkt GitOps dies und erstellt im Normalfall eine Rolle und ein Rolebinding für den Serviceaccount des ArgoCD-Application-Controllers. Diese beiden Ressourcen sind an den Namespace gebunden, so dass GitOps darüber Zugriff auf den Namespace erhält.
 
 Diese Rolle und das Rolebinding können wir natürlich auch manuell erstellen, also mit GitOps ausrollen, um die gleichen Berechtigungen wie durch das Label zu erhalten. So haben wir die Möglichkeit, dass die GitOps-Instanz für die Clusteradministratoren über diesen manuellen Weg und die GitOps-Instanz der Developer über das Label im Namespace Berechtigungen auf den Namespace erhalten. (Das geht natürlich grundsätzlich auch anders herum.)
 
-image:pictures/instanzberechtigungen.png["Instanzberechtigungen"]
+image:pictures/instanzberechtigungen2.png["Instanzberechtigungen"]
 
 
 
