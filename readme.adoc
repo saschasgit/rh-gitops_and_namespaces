@@ -49,7 +49,187 @@ https://issues.redhat.com/browse/GITOPS-1290
 
 IMPORTANT: Ich habe noch nicht getestet, ob es eine einfach Option gibt, dieses Verhalten je nach Instanz zu steuern. Das Setting bezieht sich auf die Subscription, also den Operator und die Instanzen erben dies vom Operator. Red Hat schreibt zwar (siehe Issue Link) "Cluster admin can choose to maintain the existing behaviour and request Argo CD to be namespace-admin", bisher ist mir aber noch nicht klar, wie dies einfach gesetzt werden kann.
 
+== Option 3: Getrennte Instanzen und Einsatz des Namespace Configuration Operators
 
+Eine Möglichkeit, dies eleganter zu lösen, so dass man am Ende gar nicht zwei verschiedenen GitOps-Instanzen Berechtigungen auf den Namespace geben muss, ist der Einsatz des "Namespace Configuration Operators". Mit diesem lassen sich sowohl die Namespaces als auch die gewünschte Konfiguration innerhalb dieser Namespaces konfigurieren und über GitOps ausrollen.
+
+image:pictures/namespaceconfigurator.png["Namespace Configuration Operator"]
+
+Der Operator bringt drei CRDs mit sich:
+
+.CRDs
+* NamespaceConfig
+* GroupConfig
+* UserConfig
+
+Die Namen dieser drei CRDs beziehen sich nicht darauf, was sie konfigurieren, sondern durch welches Objekt sie getriggert werden, beispielsweise reagiert eine NamespaceConfig, wenn ein Namespace erstellt wird und nimmt dann eine Konfiguration vor. Uns mit einer UserConfig kann man beispielsweise automatisch bei der Anlage eines Users diesem einen Namespace mit einer vorgegebenen Konfiguration bereitstellen.
+
+An dieser Stelle wird nur eine einfache Konfiguration vorgenommen. Wer detaillierter sehen möchte, was der Operator für Möglichkeiten bietet, kann sich folgende Links ansehen:
 
 https://github.com/redhat-cop/namespace-configuration-operator
+https://github.com/redhat-cop/namespace-configuration-operator/blob/master/examples/namespace-config/readme.md
+https://github.com/redhat-cop/namespace-configuration-operator/blob/master/examples/user-sandbox/readme.md
+https://github.com/redhat-cop/namespace-configuration-operator/blob/master/examples/team-onboarding/group-config.yaml
 
+In unserem Beispiel sollen bei der Anlage einer Gruppe (was natürlich über ArgoCD geschehen kann) drei Namespaces angelegt werden und verschiedene RessourceQuotas gesetzt werden. Bei einem Namespace werden zudem LimitRanges angelegt.
+
+NOTE: Dies ist nur ein einfaches Beispiel. Man kann innerhalb der Namespaces beliebige Ressourcen erstellen, beispielsweise NetworkPolicies, etc.
+
+Zunächst legen wir in dem Beispiel zwei Gruppen mit jeweils zwei Usern an. Jedoch wird nur eine der beiden Gruppen, die erste, mit einem Label versehen: "team: important-project"
+
+[source,yaml]
+----
+kind: Group
+apiVersion: user.openshift.io/v1
+metadata:
+  name: namespace-test-group
+  labels:
+    team: important-project
+users:
+  - namespace-testuser1
+  - namespace-testuser2
+---
+kind: Group
+apiVersion: user.openshift.io/v1
+metadata:
+  name: namespace-test-group2
+users:
+  - namespace-testuser3
+  - namespace-testuser4 
+----
+
+Nun legen wir eine GroupConfig an. Diese hat einen Labelselector, der zum Label unser ersten Gruppe passt. Damit reagiert die GroupConfig nur auf die Erstellung unser ersten Gruppe, bei der zweiten bleibt der Operator unttätig.
+
+Durch diese GroupConfig werden durch die Erstellung der ersten Gruppe automatisch drei Namespaces angelegt und noch eine beliebge Annotation hinzugefügt. Zudem erhält jeder Namespace ein eigenes Label mit seinem Namen: "namespace: important-project-dev"
+
+[source,yaml]
+----
+kind: GroupConfig
+apiVersion: redhatcop.redhat.io/v1alpha1
+metadata:
+  name: test-groupconfig
+spec:
+  labelSelector:
+    matchLabels:
+      team: important-project
+  templates:
+    - objectTemplate: |
+        apiVersion: v1
+        kind: Namespace
+        metadata:
+          name: important-project-dev
+          labels:
+            group: {{ .Name }}
+            namespace: important-project-dev
+          annotations:
+            my-annotation: justtext-dev
+    - objectTemplate: |
+        apiVersion: v1
+        kind: Namespace
+        metadata:
+          name: important-project-staging
+          labels:
+            group: {{ .Name }}
+            namespace: important-project-staging
+          annotations:
+            my-annotation: justtext-staging
+    - objectTemplate: |
+        apiVersion: v1
+        kind: Namespace
+        metadata:
+          name: important-project-prod
+          labels:
+            group: {{ .Name }}
+            namespace: important-project-prod
+          annotations:
+            my-annotation: justtext-prod
+----
+
+Und damit sind wir auch schon beim letzten Teil des Beispiels, der NamespaceConfig. Hier haben wir drei verschiedene NamespaceConfigs, die durch den Labelselector jeweils automatisch auf ein anderes Label reagieren, sobald ein entsprechender Namespace erstellt wird. Dadurch können wir für jeden unserer Namespaces eine eigene Konfiguration vorgeben.
+
+[source,yaml]
+----
+kind: NamespaceConfig
+apiVersion: redhatcop.redhat.io/v1alpha1
+metadata:
+  name: test-namespaceconfig-dev
+spec:
+  labelSelector:
+    matchLabels:
+      namespace: important-project-dev
+  templates:
+    - objectTemplate: |
+        apiVersion: v1
+        kind: ResourceQuota
+        metadata:
+          name: projectdefault
+          namespace: {{ .Name }}
+        spec:
+          hard:
+            pods: "4" 
+            requests.cpu: "1" 
+            requests.memory: 1Gi 
+            limits.cpu: "2" 
+            limits.memory: 2Gi 
+---
+kind: NamespaceConfig
+apiVersion: redhatcop.redhat.io/v1alpha1
+metadata:
+  name: test-namespaceconfig-staging
+spec:
+  labelSelector:
+    matchLabels:
+      namespace: important-project-staging
+  templates:
+    - objectTemplate: |
+        apiVersion: v1
+        kind: ResourceQuota
+        metadata:
+          name: projectdefault
+          namespace: {{ .Name }}
+        spec:
+          hard:
+            pods: "8" 
+            requests.cpu: "2"
+            requests.memory: 2Gi 
+            limits.cpu: "4" 
+            limits.memory: 4Gi
+---
+kind: NamespaceConfig
+apiVersion: redhatcop.redhat.io/v1alpha1
+metadata:
+  name: test-namespaceconfig-prod
+spec:
+  labelSelector:
+    matchLabels:
+      namespace: important-project-prod
+  templates:
+    - objectTemplate: |
+        apiVersion: v1
+        kind: ResourceQuota
+        metadata:
+          name: projectdefault
+          namespace: {{ .Name }}
+        spec:
+          hard:
+            pods: "8" 
+            requests.cpu: "2" 
+            requests.memory: 2Gi 
+            limits.cpu: "4" 
+            limits.memory: 4Gi
+    - objectTemplate: |
+        apiVersion: v1
+        kind: LimitRange
+        metadata:
+          name: projectlimitrange
+          namespace: {{ .Name }}
+        spec:
+          limits:
+            - default:
+                memory: 512Mi
+              defaultRequest:
+                memory: 256Mi
+              type: Container
+----
+
+Der Operator ist noch weit flexibler. Beispielsweise kann auch mit einer "MatchExpressions" auf Annotationen reagiert werden und mehr.
