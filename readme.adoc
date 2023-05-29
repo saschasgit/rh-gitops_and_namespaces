@@ -64,7 +64,7 @@ Der Operator bringt drei CRDs mit sich:
 * GroupConfig
 * UserConfig
 
-Die Namen dieser drei CRDs beziehen sich nicht darauf, was sie konfigurieren, sondern durch welches Objekt sie getriggert werden, beispielsweise reagiert eine NamespaceConfig, wenn ein Namespace erstellt wird und nimmt dann eine Konfiguration vor. Uns mit einer UserConfig kann man beispielsweise automatisch bei der Anlage eines Users diesem einen Namespace mit einer vorgegebenen Konfiguration bereitstellen.
+Die Namen dieser drei CRDs beziehen sich nicht darauf, was sie konfigurieren, sondern durch welches Objekt sie getriggert werden, beispielsweise reagiert eine NamespaceConfig, wenn ein Namespace erstellt wird und nimmt dann eine Konfiguration vor. Und mit einer UserConfig kann man beispielsweise automatisch bei der Anlage eines Users diesem einen Namespace mit einer vorgegebenen Konfiguration bereitstellen.
 
 An dieser Stelle wird nur eine einfache Konfiguration vorgenommen. Wer detaillierter sehen möchte, was der Operator für Möglichkeiten bietet, kann sich folgende Links ansehen:
 
