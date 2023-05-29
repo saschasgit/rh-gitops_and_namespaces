@@ -17,9 +17,9 @@ Diese Option klingt zunächst leicht, ist sie aber nicht, da sie schwierig zu ko
 
 image:pictures/oneargo.png["Nur eine Instanz"]
 
-Das Problem lauert aber an einer anderen Stelle. Wenn wir nur eine GitOps-Instanz haben, dann haben wir auch nur einen dahinterliegenden GitOps-Serviceaccount mit den entsprechenden Berechtigungen in dem Namespace. Und wenn ein Developerteam GitOps verwendet, dann werden die Ressourcen nicht mit den Berechtigungen des Developers, sondern mit den Berechtigungen des GitOps-Serviceaccounts erstellt. Hat also der Clusteradmin die Möglichkeit, über GitOps eine Networkpolicy auszurollen, dann hat der Developer das in seinem Namespace ebenso.
+CAUTION: Das Problem lauert aber an einer anderen Stelle. Wenn wir nur eine GitOps-Instanz haben, dann haben wir auch nur einen dahinterliegenden GitOps-Serviceaccount mit den entsprechenden Berechtigungen in dem Namespace. Und wenn ein Developerteam GitOps verwendet, dann werden die Ressourcen nicht mit den Berechtigungen des Developers, sondern mit den Berechtigungen des GitOps-Serviceaccounts erstellt. Hat also der Clusteradmin die Möglichkeit, über GitOps eine Networkpolicy auszurollen, dann hat der Developer das in seinem Namespace ebenso.
 
-Nun kann man dies noch über die Argo-Applikationsprojekte lösen, denn dort lässt sich konfigurieren, welche Art von Kubernetesonjekten wie z.B. "NetworkPolicy" erstellt werden dürfen und welche nicht. Diese Konfiguration muss aber sehr bedacht vorgenommen werden, damit am Ende die Berechtigungen korrekt sind.
+Nun kann man dies noch über die Argo-Applikationsprojekte lösen, denn dort lässt sich konfigurieren, welche Art von Kubernetesonjekten wie z.B. "NetworkPolicy" erstellt werden dürfen und welche nicht. Ebenso lässt sich konfigurieren, in welchen Namespaces die Berechtigungen gelten. Diese Konfiguration muss aber sehr bedacht vorgenommen werden, damit am Ende die Berechtigungen korrekt sind.
 
 Wenn man jedoch unterschiedliche Instanzen von Red Hat GitOps einsetzen möchte oder dies gar eine Compliance- oder Securityanforderung ist, muss man anders vorgehen. Hierfür sind die beiden folgenden Optionen gedacht.
 
@@ -38,6 +38,16 @@ Wenn ein Namespace mit dem entsprechenden Label erstellt wird, bermerkt GitOps d
 Diese Rolle und das Rolebinding können wir natürlich auch manuell erstellen, also mit GitOps ausrollen, um die gleichen Berechtigungen wie durch das Label zu erhalten. So haben wir die Möglichkeit, dass die GitOps-Instanz für die Clusteradministratoren über diesen manuellen Weg und die GitOps-Instanz der Developer über das Label im Namespace Berechtigungen auf den Namespace erhalten. (Das geht natürlich grundsätzlich auch anders herum.)
 
 image:pictures/instanzberechtigungen2.png["Instanzberechtigungen"]
+
+CAUTION: Auch hier muss man aufpassen. Das Problem ist die GitOps-Instanz für die Developer. Denn der Serviceaccount, der für die GitOps-Instanz Ressourcen ausrollt, hat zunächst einmal die sehr weitgehende Rechte des Namespace-Admins und damit beispielsweise die Rechte zum Erstellen, Ändern oder Löschen von Subscriptions oder NetworkPolicies. Daraus folgt, dass man dafür sorgen muss, dass dass der Serviceaccount nicht diese weitgehenden Berechtigungen erhält.
+
+Dieses Problem hat man auch im ArgoCD Projekt erkannt (vor ca. einem Jahr war das noch ein größeres Problem) und dafür eine Option erschaffen. Es gibt Umgebungsvariablen, welche auf die Rolle verweisen, welche GitOps für den Application-Controller verwendet. Diese kann in der Subscription gesetzt werden. Siehe dazu auch:
+
+https://argocd-operator.readthedocs.io/en/latest/usage/custom_roles/
+https://docs.openshift.com/container-platform/4.10/cicd/gitops/gitops-release-notes.html#new-features-1-4-0_gitops-release-notes
+https://issues.redhat.com/browse/GITOPS-1290
+
+IMPORTANT: Ich habe noch nicht getestet, ob es eine einfach Option gibt, dieses Verhalten je nach Instanz zu steuern. Das Setting bezieht sich auf die Subscription, also den Operator und die Instanzen erben dies vom Operator. Red Hat schreibt zwar (siehe Issue Link) "Cluster admin can choose to maintain the existing behaviour and request Argo CD to be namespace-admin", bisher ist mir aber noch nicht klar, wie dies einfach gesetzt werden kann.
 
 
 
