@@ -33,7 +33,9 @@ Wenn man nun beide Instanzen berechtigen möchte, auf einen Namespace zuzugreife
 
 image:pictures/berechtigungsprozess.png["Berechtigungsprozess"]
 
+Wenn ein Namespace mit dem entsprechenden Label erstellt wird, bermerkt GitOps dies und erstellt im Normalfall eine Rolle und ein Rolebinding für den Serviceaccount des ArgoCD-Application-Controllers. Diese beiden Ressourcen sind an den Namespace gebunden, so dass GitOps darüber Zugriff auf den Namespace erhält.
 
+image:pictures/instanzbrechtigungen.png["Instanzberechtigungen"]
 
 https://github.com/redhat-cop/namespace-configuration-operator
 
