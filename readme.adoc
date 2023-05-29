@@ -31,7 +31,7 @@ Hinweis: Diese Option habe ich bisher nicht getestet, es dürfte aber keine tech
 
 Wenn man nun beide Instanzen berechtigen möchte, auf einen Namespace zuzugreifen, muss man wissen, was hinter den Kulissen passiert, wenn ein Namespace ein entsprechendes Label erhält.
 
-image:pictures/berechtigungsprozess.png["Berechtigungsprozess"]
+image:pictures/berechtigungsprozess2.png["Berechtigungsprozess"]
 
 Wenn ein Namespace mit dem entsprechenden Label erstellt wird, bermerkt GitOps dies und erstellt im Normalfall eine Rolle und ein Rolebinding für den Serviceaccount des ArgoCD-Application-Controllers. Diese beiden Ressourcen sind an den Namespace gebunden, so dass GitOps darüber Zugriff auf den Namespace erhält.
 
@@ -39,133 +39,7 @@ Diese Rolle und das Rolebinding können wir natürlich auch manuell erstellen, a
 
 image:pictures/instanzberechtigungen.png["Instanzberechtigungen"]
 
+
+
 https://github.com/redhat-cop/namespace-configuration-operator
-
-== Konfiguration der Instanz
-
-== Aus Applikationssicht
-
-Die Bereitstellung der ServiceMesh-Sidecars (Envoy-Proxies) erfolgt über eine Annotation der Pods. Für Jaeger benötigt man eine weitere Annotation im Deployment. Die Annotation wird im überordneten Objekt, beispielsweise dem Deployment, im Template für die Pods gesetzt:
-
-[source,yaml]
-----
-kind: Deployment
-...
-spec:
-    template:
-        annotation:
-            sidecar.istio.io/inject: 'true'
-            sidecar.jaegertracing.io/inject: 'true'
-----
-
-Diese Sidecar-Injection kann beim RedHat ServiceMesh nicht auf Projektebene gesetzt werden, sie kann dort jedoch deaktiviert werden, indem im Projekt die Annotation mit dem Wert 'disabled' eingefügt wird.
-
-Da die Sidecar-Injection über die Annotation bei Istio als "Deprecated" gilt und in Zukunft über ein Label umgesetzt wird (https://istio.io/latest/docs/reference/config/annotations/) wird dies sicherlich auch bald für das RedHat ServiceMesh gelten.
-
-
-=== Die verschiedenen CRDs des ServiceMeshs
-
-Die meisten CRDs (Custom Ressource Definition) des ServiceMeshs konfigurieren im Grunde die Envoy-Proxies, die das Mesh als Sidecar an jede Pod hängt.
-
-Eine andere wichtige Sache ist, dass die meisten CRDs optional eingesetzt werden und nicht unbedingt konfiguriert werden müssen. Wenn man den Ingress ins Mesh konfigurieren möchte, dann sind dazu im Grunde nur zwei Ressourcen notwendig: Ein Gateway und ein VirtualService. Wenn man darüber hinaus noch den TLS-Mode vorgeben möchte, weil diese von der globalen Konfiguration abweicht, dann kommt noch die Ressource "PeerAuthentication" hinzu.
-
-Da es zu jeder CRD zahlreiche Beispiele in der wirklich guten Istio Dokumentation gibt und diese Beispiele diese kurze Darstellung sprengen würden, sind die entsprechenden Links eingefügt.
-
-==== Gateway
-https://istio.io/latest/docs/reference/config/networking/gateway/
-
-Die erste CRD ist eine Ausnahme davon. Das Gateway konfiguriert nicht die anderen Envoy-Proxies, sondern das übergeordnete Istio Gateway.
-
-In der Konfiguration des Gateways werden die URLs angegeben, welche veröffentlich werden sollen. Diese URLs werden dann über das Istio Gateqay in das Mesh geleitet. Für https kann in einer tls Sektion das Zertifikat als pem, crt+key oder als Secret angegeben werden.
-
-Dabei können, wie bei allen Instio CRDs, sehr genaue Angaben gemacht werden. Beispielsweise können Cookieinhalte abgefragt werden und je nach User auf verschiedene Destinationports konfiguriert werden.
-
-Ein wesentlicher Unterschied zur OpenShift Route ist, dass hier nur die Veröffentlichung enthalten ist, nicht aber das Ziel, an welchen der Traffic dann geleitet wird. Für die Angabe des Ziels benötigt man dann einen VirtualService. (Ein Gateway ist im Grunde auch ein istio-Proxy und kann daher mit VirtualServices und DestinationRules verwendet werden.)
-
-==== VirtualService
-https://istio.io/latest/docs/reference/config/networking/virtual-service/
-
-Ein VirtualService konfiguriert das Routing des Traffics. In ihm werden die Routingregeln konfiguriert, die angewandt werden, wenn ein Host (über eine URL) aufgerufen wird. Auch hier gibt es detaillierte Konfigurationsmöglichkeiten wie Pfad-basiertes Routing, Timeouts, das Routing für Mesh-externe Services (diese werden über einen "ServiceEntry" hinzugefügt), Delegationen zu anderen VirtualServices, Header-basiertes Routing, URL-rewrite und weitere. Auch lässt sich damit konfigurieren, wie der Traffic zwischen zwei Versionen eines Services prozentual aufgeteilt werden soll, beispielsweise für ein Canary Deployment. Um den Traffic zu routen, der durch eine Gateway-Konfiguration ins Mesh kommt, kann der Gateway im "spec" Abschnitt des VirtualServices angegeben werden.
-
-Die Istio CRDs unterscheiden in der Konfiguration drei Arten von Traffic: http, https und tcp
-
-Auch können Subsets angelegt werden, falls es z.B. zwei verschiedene Versionen eines OpenShift-Services gibt, zu denen nach weiteren Regeln geroutet werden soll. Diese weiteren Regeln werden dann in einer DestinationRule konfiguriert.
-
-==== DestinationRule
-https://istio.io/latest/docs/reference/config/networking/destination-rule/
-
-DestinationsRules sind die Policies, die aktiv werden, nachdem das Routing passiert. So können hier Einstellungen für das LoadBalancing vorgenommen werden und weitere Möglichkeiten als "RoundRobin" konfiguriert werden. Ist nichts konfiguriert, wird das normals RoundRobin Prinzip der OpenShift Services angewendet. Diese Regeln können auch unterschiedlich nach http und https konfiguriert werden.
-
-Ebenso können damit Subsets, welche in einem VirtualService konfiguriert wurde, passend zu den entsprechenden Pods der verschiedenen OpenShift Services zugewiesen werden.
-
-Auch kann über Label ein Load Balancing für einen Serive konfiguriert werden, falls beispielsweise der Service in unterschiedlichen Verfügbarkeitszonen zur Verfügung steht. Zudem sind Failover Einstellungen möglich, StickySessions, Limitierung der Verbindungen und Weiteres.
-
-DestinationRules haben, wie auch die CRD "PeerAuthentication" eine Möglichkeit, den TLS-Modus zu konfigurieren. Der Unterschied zwischen den beiden ist, dass die DestinationRule den Egress der EnvoyProxies konfiguriert und die PeerAuthentication den Ingress.
-
-==== PeerAuthentication
-https://istio.io/latest/docs/reference/config/security/peer_authentication/
-
-Die PeerAuthentication bestimmt, wie Traffic in den EnvoyProxy getunnelt wird (oder eben auch nicht).
-
-Hiermit kann für den Ingress in den EnvoyProxy konfiguriert werden, ob mTLS notwendig ist oder ob auch Plaintext akzeptiert wird. "STRICT" erlaubt nur mTLS, "PERMISSIVE" erlaubt mTLS und Plaintext, "DISABLED" setzt Plaintext voraus.
-
-Dies kann sowohl für einen ganzen Namespace, als auch für einzelne Services konfiguriert werden. Ebenso kann nach Port unterschieden werden.
-
-==== AuthorizationPolicy
-https://istio.io/latest/docs/reference/config/security/authorization-policy/
-
-Grundsätzlich sind Anfragen innerhalb des Meshes zwischen Services zulässig. Um die Security zu erhöhen, kann dies jedoch auch granular geregelt werden. Über AuthorizationPolices lässt sich bestimmen, wer auf welchen Service im Mesh zugreifen darf. Dabei gibt es drei Arten von Regeln, welche in dieser Reihenfolge abgearbeitet werden: CUSTOM, DENY, ALLOW
-
-Zusätzlich können Audit Aktionen konfiguriert werden um die Requests zu loggen.
-
-Es kann damit konfiguriert werden, ob aus einem bestimmen Namespace, durch einen bestimmten Serviceaccount, von bestimmten IP-Bereichen etc. auf Ressourcen im Mesh zugegriffen werden kann. Dabei kann auch bestimmt werden, welche Methoden erlaubt sind, z.B. "POST" und "GET". Ebenso können JWT (JsonWebToken) für einen Zugriff vorausgesetzt werden.
-
-Über Labels kann konfiguriert werden, für welchen Workload im Mesh die AuthorizationPolicy gilt.
-
-Es ist auch mnöglich, als "Source" den Wert "requestPrincipals" zu verwenden. In diesem Fall ist eine zusätzliche CRD "RequestAuthentication" notwendig, die bestimmt, welche Art von Authentication zulässig ist.
-
-==== RequestAuthentication
-https://istio.io/latest/docs/reference/config/security/request_authentication/
-
-Diese Ressource kann zusätzlich zur "AuthorizationPolicy" eingesetzt werden. Hier kann z.B. konfiguriert werden, welchen Issuer ein JWT haben muss, um akzeptiert zu werden. Dies kann für einen gesamten Namespace konfiguriert werden. Man kann aber auch je nach Host (aufgerufene URL) oder Pfad-basiert verschiedene Konfigurationen einsetzen.
-
-==== ServiceEntry
-https://istio.io/latest/docs/reference/config/networking/service-entry/
-
-Die Ressource "ServiceEntry" ermöglicht es, externe Services aus dem Mesh heraus ansprechen zu können.
-
-Die Funktionsweise ist folgende: Intern verfügt das ServiceMesh über eine Service-Registry, in welcher alle Services, welche zum Mesh gehören, hinterlegt sind. Über einen ServiceEntry wird eine externe Ressource als Service zu dieser Service-Registry hinzugefügt.
-
-Über einen ServiceEntry können beispielsweise externe Webseiten oder Datenbanken genutzt werden. Auch kann hierbei festgelegt werden, über welche Ports und mit welchem Protokoll zugegriffen wird. (Die Konfiguration von TLS und die Angabe von Zertifikaten für TLS wird bei Bedarf in einer zusätzlichen "DestinationRule" vorgenommen.)
-
-Über die Angabe eines "workloadSelector" können VMs eingebunden werden und wie die Pods eines Services angesprochen werden. Beim Red Hat ServiceMesh ist dabei zu beachten, dass dies nur für VMs gilt, welche mittels "OpenShift Virtualization" im OpenShift Cluster laufen. Dies soll die z.B. die Migration von Workload unterstützen. Es ist auch möglich, damit über Label ein LoadBalacing einzusetzen, welches zum Teil VMs, zum Teil bereits einen OpenShift-Service verwendet. Um diese Möglichkeit zu nutzen, muss eine weitere CRD genutzt werden, der "WorkloadEntry".
-
-==== WorkloadEntry
-https://istio.io/latest/docs/reference/config/networking/workload-entry/
-
-Mit einem WorkloadEntry können, im Zusammenhang mit dem "ServiceEntry", einzelne VMs angebunden werden, welche in "OpenShift Virtualization" laufen. Die VM kann dabei über IP oder FQDN angegeben werden. Zusätzlich wird der VM ein Label zugewiesen, um dieses dann im Mesh nutzen zu können.
-
-==== WorkloadGroup
-https://istio.io/latest/docs/reference/config/networking/workload-group/
-
-Eine Workloadgroup ist eine Vorlage für WorkloadEntries und verhält sich dazu ungefähr die ein Deployment zu einer Pod. Eine WorkloadGroup beschreibt daher eine Sammlung von VMs. Die genaue Nutzung ist jedoch unklar, da die Dokumentation hier nicht vollständig ist.
-
-==== Sidecar
-https://istio.io/latest/docs/reference/config/networking/sidecar/
-
-Standardmäßig werden alle Envoy-Proxy Sidecars in einem Mesh automatisch so konfiguriert, dass diese über alle Ports miteinander kommunizieren können, die in dem Mesh verwendet werden. Dabei können auch die Sidecars eines Services mit den Sidecars aller anderen Services kommunizieren.
-
-Um die Sicherheit zu erhöhen, können die Sidecars bei Bedarf granular konfiguriert werden. Die Konfiguration kann dabei für einen gesamten Namespace gelten oder auch nur, über Label in einem "workloadSelector", für die Sidecars eines Services. Dabei kann konfiguriert werden, welche Ports und Protokolle das Sidecar akzeptiert und mit welchen Services (outbound) es kommunizieren kann.
-
-Werden Sidecars sowohl für einen Namespace als auch für einen Workload konfiguriert, ist für einen Workload die entsprechende Workloadkonfiguration relevant. Es sollte unbedingt vermieden werden, für einen Namespace oder Workload mehrere sich widersprechende Konfigurationen zu erstellen.
-
-==== ProxyConfig
-https://istio.io/latest/docs/reference/config/networking/proxy-config/
-
-Auch über die CRD "ProxyConfig" können die Sidecars genauer konfiguriert werden, jedoch in anderer Hinsicht. Über ProxyConfig können die Konfiguration für das vom Proxy verwendete Image und die für den Proxy verwendeten parallelen Worker-Threads konfiguriert werden. Dies kann sowohl für einen kompletten Namespace als auch über Label für einen bestimmten Workload konfiguriert werden. Der Einsatz dieser CRD ist vermutlich sehr selten und speziell.
-
-==== EnvoyFilter
-https://istio.io/latest/docs/reference/config/networking/envoy-filter/
-
-Mit EnvoyFilter können sehr tiefe Filtereinstellungen innerhalb der Envoy-Proxies vorgenommen werden. Diese Möglichkeit dürfte insgesamt nur sehr selten Anwendung finden, da hier tief eingegriffen wird und eine Fehlkonfiguration das gesamte Mesh destabilisieren kann. Auch muss hier, bei dem Wechsel auf eine neue Version des Meshes darauf geachtet werden, dass die verwendete Konfiguration weiterhin gültig ist, da es hier keine Kompatiblitätszusagen zu älteren Versionen gibt.
 
