@@ -69,8 +69,11 @@ Die Namen dieser drei CRDs beziehen sich nicht darauf, was sie konfigurieren, so
 An dieser Stelle wird nur eine einfache Konfiguration vorgenommen. Wer detaillierter sehen möchte, was der Operator für Möglichkeiten bietet, kann sich folgende Links ansehen:
 
 https://github.com/redhat-cop/namespace-configuration-operator
+
 https://github.com/redhat-cop/namespace-configuration-operator/blob/master/examples/namespace-config/readme.md
+
 https://github.com/redhat-cop/namespace-configuration-operator/blob/master/examples/user-sandbox/readme.md
+
 https://github.com/redhat-cop/namespace-configuration-operator/blob/master/examples/team-onboarding/group-config.yaml
 
 In unserem Beispiel sollen bei der Anlage einer Gruppe (was natürlich über ArgoCD geschehen kann) drei Namespaces angelegt werden und verschiedene RessourceQuotas gesetzt werden. Bei einem Namespace werden zudem LimitRanges angelegt.
