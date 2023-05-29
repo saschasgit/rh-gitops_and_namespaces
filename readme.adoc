@@ -234,6 +234,8 @@ spec:
               type: Container
 ----
 
+Es ist nebenbei egal, in welcher Reihenfolge diese Ressourcen erstellt werden.
+
 Der Operator ist noch weit flexibler. Beispielsweise kann auch mit einer "MatchExpressions" auf Annotationen reagiert werden und mehr.
 
 CAUTION: Der Hinweis bezüglich der Berechtigungen des GitOps-Serviceaccounts aus der zweiten Option gilt natürlich auch hier.
