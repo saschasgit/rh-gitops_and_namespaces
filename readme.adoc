@@ -1,9 +1,21 @@
-= Red Hat ServiceMesh
+= Managing Namespaces with Red hat GitOps
 :toc:
 
-In diesem Repository befinden sich Erläuterungen zum Red Hat Service Mesh und eine Beispielapplikation, um ein wenig zu experimentieren.
+In diesem Repository befinden sich Möglichkeiten, um Namespaces mit Red Hat GitOps zu managen.
 
-== Installieren des Operators
+== Vorwort
+
+Grundsätzlich kann man Namespaces mit Red Hat GitOps erstellen. Entweder, insbesondere bei einer älteren Operatorversion, indem man diese als Ressource in einer YAML-Datei deklariert und diese mit Red Hat GitOps ausrollte oder, bei einer neuen Operatorversion, indem man die Erstellung des Namespaces einfach in der Syncoptionen der Argo-Application angibt. Der Unterschied zwischen den Operatorversionen ist, dass man nur in den neuen bei der Syncoption auch Labels und Annotations direkt mitgeben kann, diese aber wichtig sind, damit der Namespace anschließend auch von Red Hat GitOps verwaltet werden kann, da die Berechtigung über ein Label gesetzt werden.
+
+In der Regel haben wir aber getrennte Gruppen, welche auf einem OpenShift Server unterwegs sind. Das sind einerseits die Clusteradministratoren und andererseits die Developerteams.
+
+Problematisch kann es nun werden, wenn sowohl die Clusteradministratoren als auch die Developerteams Red Hat GitOps verwenden möchten. Denn auf einmal möchten zwei verschiedene Gruppen auf die gleichen Namespaces zugreifen, um dort jeweils ihre Konfigurationen zu hinterlegen. Die Clusteradmins möchten beispielsweise Ressourcequotas, Limitranges oder Networkpolicies im Namespace konfigurieren und die Developer möchten ihrerseits natürlich Deployments, Configmaps, Routen und mehr konfigurieren.
+
+== Option 1: Nur eine Red hat GitOps Instanz
+
+Die erste Option erklärt sich im Grunde von selbst. Technisch völlig problemfrei ist es, einfach nur eine einzige Instanz von Red Hat GitOps zu verwenden. Die notwendige Trennung der Berechtigungen erfolgt, wie immer, über die entsprechende RBAC Konfiguration in Red Hat GitOps, so dass die Developerteams nur Berechtigungen in ihrem Argo-Applikationsprojekt erhalten. Mit den Berechtigungen muss man hier natürlich noch einmal besonders aufpassen, damit niemand unberechtigtes die Rechte zur Clusteradministration erhält.
+
+image:pictures/oneargo.png["Nur eine Instanz"]
 
 https://github.com/redhat-cop/namespace-configuration-operator
 
