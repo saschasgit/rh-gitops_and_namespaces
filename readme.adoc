@@ -235,3 +235,5 @@ spec:
 Der Operator ist noch weit flexibler. Beispielsweise kann auch mit einer "MatchExpressions" auf Annotationen reagiert werden und mehr.
 
 CAUTION: Der Hinweis bezüglich der Berechtigungen des GitOps-Serviceaccounts aus der zweiten Option gilt natürlich auch hier.
+
+CAUTION: Einen Wermutstropfen hat auch diese Option: Der Operator ist nur als Communityoperator vorhanden, war aber trotzdem der Vorschlag von Red Hat für diese Thematik.
