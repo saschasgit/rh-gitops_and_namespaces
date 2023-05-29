@@ -19,15 +19,15 @@ image:pictures/oneargo.png["Nur eine Instanz"]
 
 CAUTION: Das Problem lauert aber an einer anderen Stelle. Wenn wir nur eine GitOps-Instanz haben, dann haben wir auch nur einen dahinterliegenden GitOps-Serviceaccount mit den entsprechenden Berechtigungen in dem Namespace. Und wenn ein Developerteam GitOps verwendet, dann werden die Ressourcen nicht mit den Berechtigungen des Developers, sondern mit den Berechtigungen des GitOps-Serviceaccounts erstellt. Hat also der Clusteradmin die Möglichkeit, über GitOps eine Networkpolicy auszurollen, dann hat der Developer das in seinem Namespace ebenso.
 
-Nun kann man dies noch über die Argo-Applikationsprojekte lösen, denn dort lässt sich konfigurieren, welche Art von Kubernetesonjekten wie z.B. "NetworkPolicy" erstellt werden dürfen und welche nicht. Ebenso lässt sich konfigurieren, in welchen Namespaces die Berechtigungen gelten. Diese Konfiguration muss aber sehr bedacht vorgenommen werden, damit am Ende die Berechtigungen korrekt sind.
+Nun kann man dies noch über die Argo-Applikationsprojekte lösen, denn dort lässt sich konfigurieren, welche Art von Kubernetesobjekten wie z.B. "NetworkPolicy" erstellt werden dürfen und welche nicht. Ebenso lässt sich konfigurieren, in welchen Namespaces die Berechtigungen gelten. Diese Konfiguration muss aber sehr bedacht vorgenommen werden, damit am Ende die Berechtigungen korrekt sind.
 
-Wenn man jedoch unterschiedliche Instanzen von Red Hat GitOps einsetzen möchte oder dies gar eine Compliance- oder Securityanforderung ist, muss man anders vorgehen. Hierfür sind die beiden folgenden Optionen gedacht.
+Wenn man jedoch unterschiedliche Instanzen von Red Hat GitOps einsetzen möchte oder dies gar eine Securityanforderung ist, muss man anders vorgehen. Hierfür sind die beiden folgenden Optionen gedacht.
 
 == Option 2: Getrennte Instanzen und Konfiguration der Instanzberechtigungen
 
 Wenn man getrennte Instanzen von Red Hat GitOps einsetzt, stösst man auf ein Problem. Über ein Label "argocd.argoproj.io/managed-by:" wird in einem Namespace angegeben, welche Instanz diesen Namespace verwaltet. Daher hat erst einmal nur eine Instanz von Red Hat GitOps die Berechtigung, auf den Namespace zuzugreifen.
 
-Hinweis: Diese Option habe ich bisher nicht getestet, es dürfte aber keine technischen Probleme geben.
+NOTE: Diese Option habe ich bisher nicht getestet, es dürfte aber keine technischen Probleme geben.
 
 Wenn man nun beide Instanzen berechtigen möchte, auf einen Namespace zuzugreifen, muss man wissen, was hinter den Kulissen passiert, wenn ein Namespace ein entsprechendes Label erhält.
 
