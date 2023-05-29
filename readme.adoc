@@ -105,7 +105,7 @@ users:
 
 Nun legen wir eine GroupConfig an. Diese hat einen Labelselector, der zum Label unser ersten Gruppe passt. Damit reagiert die GroupConfig nur auf die Erstellung unser ersten Gruppe, bei der zweiten bleibt der Operator unttätig.
 
-Durch diese GroupConfig werden durch die Erstellung der ersten Gruppe automatisch drei Namespaces angelegt und noch eine beliebge Annotation hinzugefügt. Zudem erhält jeder Namespace ein eigenes Label mit seinem Namen: "namespace: important-project-dev"
+Durch diese GroupConfig werden durch die Erstellung der ersten Gruppe automatisch drei Namespaces angelegt und noch eine beliebge Annotation hinzugefügt. Zudem erhält jeder Namespace ein eigenes Label mit seinem Namen: "namespace: important-project-dev", etc.
 
 [source,yaml]
 ----
