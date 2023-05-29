@@ -17,7 +17,7 @@ Diese Option ist eigentlich keine. Natürlich kann man nur eine Instanz von Red 
 
 Das Problem lauert aber an einer anderen Stelle. Wenn wir nur eine GitOps-Instanz haben, dann haben wir auch nur einen dahinterliegenden Serviceaccount mit den entsprechenden Berechtigungen in dem Namespace. Und wenn ein Developerteam GitOps verwendet, dann werden die Ressourcen nicht mit den Berechtigungen des Developers, sondern mit den Berechtigungen des GitOps-Serviceaccounts erstellt. Hat also der Clusteradmin die Möglichkeit, über GitOps eine Networkpolicy auszurollen, dann hat der Developer das in seinem Namespace ebenso.
 
-image:pictures/oneargo.png["Nur eine Instanz"]
+image:pictures/oneargo2.png["Nur eine Instanz"]
 
 Wenn man jedoch unterschiedliche Instanzen von Red Hat GitOps einsetzen möchte oder dies gar eine Compliance- oder Securityanforderung ist, muss man anders vorgehen. Hierfür sind die beiden folgenden Optionen gedacht.
 
